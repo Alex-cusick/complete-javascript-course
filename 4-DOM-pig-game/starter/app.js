@@ -10,6 +10,7 @@ function init() {
     previousRoll = 0;
     diceDOM.style.display = 'none';
     targetScore = document.getElementById('tScore').value;
+    document.getElementById("currentTarget").textContent = ("Current Target: " + targetScore);
     document.getElementById('score-0').textContent = '0';
     document.getElementById('score-1').textContent = '0';
     document.getElementById('current-0').textContent = '0';
