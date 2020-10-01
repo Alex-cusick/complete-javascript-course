@@ -1,6 +1,4 @@
-//Current date?
-now = new Date();
-console.log(now.toLocaleString('default', { month: 'long' }));
+//import { match } from "assert";
 
 var budgetController = (function () {
     //Setup Objects
@@ -147,18 +145,41 @@ var UIController = (function () {
         expensesPercentage: '.budget__expenses--percentage',
         deleteBtn: '.ion-ios-checkmark-outline',
         container: '.container',
-        expenseLinePercentage: '.item__percentage'
+        expenseLinePercentage: '.item__percentage',
+        titleMonth: '.budget__title--month'
     };
+
+    let now = new Date();
+    console.log(now.toLocaleString('default', { month: 'long' }));
+
+    var formatNumber = function (num, type) {
+        var numSplit, int, dec;
+        num = Math.abs(num);
+        num = num.toFixed(2);
+        numSplit = num.split('.');
+        int = numSplit[0];
+        if (int.length > 3) {
+            int = (int.substr(0, int.length - 3) + ',' + int.substr(int.length - 3, 3));
+        }
+        dec = numSplit[1];
+        return (type === 'exp' ? "-" : "+") + ' ' + int + '.' + dec;
+    }
 
     //Public:
     return {
         //Read what user has input
         getInput: function () {
-            return {
-                type: document.querySelector(DOMstrings.inputType).value, //+ gives 'inc', - gives 'exp'
-                descr: document.querySelector(DOMstrings.inputDescription).value,
-                value: parseFloat(document.querySelector(DOMstrings.inputValue).value)
-            };
+            type = document.querySelector(DOMstrings.inputType).value; //+ gives 'inc', - gives 'exp'
+            descr = document.querySelector(DOMstrings.inputDescription).value;
+            value = parseFloat(document.querySelector(DOMstrings.inputValue).value);
+
+            //Flip value and type if negative
+            if (value < 0) {
+                value *= (-1);
+                type = (type === "exp" ? "inc" : "exp");
+            }
+
+            return {type, descr, value};
         },
 
         //Add elements to HTML from input
@@ -175,7 +196,7 @@ var UIController = (function () {
             //Replace
             newHTML = HTML.replace('%id%', obj.id);
             newHTML = newHTML.replace('%description%', obj.desc);
-            newHTML = newHTML.replace('%value%', obj.value);
+            newHTML = newHTML.replace('%value%', formatNumber(obj.value, type));
             //Insert into DOM
             document.querySelector(element).insertAdjacentHTML('beforeend', newHTML);
         },
@@ -198,9 +219,9 @@ var UIController = (function () {
         },
 
         displayBudget: function (obj) {
-            document.querySelector(DOMstrings.budgetLabel).textContent = obj.budget;
-            document.querySelector(DOMstrings.incomeLabel).textContent = obj.totalInc;
-            document.querySelector(DOMstrings.expensesLabel).textContent = obj.totalExp;
+            document.querySelector(DOMstrings.budgetLabel).textContent = formatNumber(obj.budget, obj.budget > 0 ? 'inc' : 'exp');
+            document.querySelector(DOMstrings.incomeLabel).textContent = formatNumber(obj.totalInc, 'inc');
+            document.querySelector(DOMstrings.expensesLabel).textContent = formatNumber(obj.totalExp, 'exp');
 
             if (obj.percentage > 0) {
                 document.querySelector(DOMstrings.expensesPercentage).textContent = (obj.percentage + '%');
@@ -218,10 +239,22 @@ var UIController = (function () {
                 }
             };
 
-            nodeListForEach(fields, function (cur, i, arr) {
-
+            nodeListForEach(fields, function (cur, i) {
+                if (percentages[i] > 0) {
+                    cur.textContent = percentages[i] + '%';
+                } else {
+                    cur.textContent = '---';
+                }
             });
+        },
 
+        displayDate: function () {
+            console.log('dateInit')
+            var now, year;
+            now = new Date();
+            year = now.getFullYear();
+            month = now.toLocaleString('default', { month: 'long' });
+            document.querySelector(DOMstrings.titleMonth).textContent = month + " " + year
         },
 
         //Allow other modules to use DOMstrings Reference
@@ -254,7 +287,8 @@ var mainController = (function (budgetCtrl, UICtrl) {
     var updatePercentages = function () {
         budgetCtrl.calculatePercentages();
         var percentages = budgetCtrl.getPercentages();
-        console.log(percentages)
+        console.log(percentages);
+        UICtrl.displayPercentages(percentages);
     };
 
     //When user adds input
@@ -262,7 +296,8 @@ var mainController = (function (budgetCtrl, UICtrl) {
         var input, newItem;
         //Get field data
         var input = UIController.getInput();
-        if (input.descr !== "" && !isNaN(input.value) && input.value > 0) {
+        //Validation
+        if (input.descr !== "" && !isNaN(input.value) && input.value > 0 || input.value < 0) {
             //console.log(input);
             //Add to budgetController
             var newItem = budgetCtrl.addItem(input.type, input.descr, input.value);
@@ -310,6 +345,7 @@ var mainController = (function (budgetCtrl, UICtrl) {
                 totalExp: 0,
                 percentage: -1
             })
+            UICtrl.displayDate();
         }
     };
 

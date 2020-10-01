@@ -35,8 +35,6 @@ function changePlayer() {
     activePlayer === 0 ? activePlayer = 1 : activePlayer = 0;
 };
 
-init();
-
 document.querySelector('.btn-roll').addEventListener('click', function () {
     if (playing) {
         //random number
@@ -74,5 +72,7 @@ document.querySelector('.btn-hold').addEventListener('click', function () {
         }
     }
 });
+
+init();
 
 document.querySelector('.btn-new').addEventListener('click', init);
